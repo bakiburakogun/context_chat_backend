@@ -25,6 +25,11 @@ def run(_previous_version: int):
 
 	engine = sa.create_engine(db_url)
 	with engine.connect() as conn:
+		table_exists = conn.execute(sa.text("SELECT to_regclass('access_list')")).scalar()
+		if table_exists is None:
+			print('access_list table does not exist, skipping repair', flush=True)
+			return
+
 		# Drop the unique index that we'll convert to primary key
 		conn.execute(sa.text(
 			'DROP INDEX IF EXISTS uid_chunk_id_idx'
@@ -33,8 +38,16 @@ def run(_previous_version: int):
 		conn.execute(sa.text(
 			'ALTER TABLE access_list DROP COLUMN IF EXISTS id'
 		))
-		# Add the primary key constraint using the existing unique columns
-		conn.execute(sa.text(
-			'ALTER TABLE access_list ADD CONSTRAINT access_list_pkey PRIMARY KEY (uid, source_id)'
-		))
+		# Add the primary key constraint using the existing unique columns.
+		# Guarded so the repair stays idempotent.
+		conn.execute(sa.text('''
+			DO $$
+			BEGIN
+				IF NOT EXISTS (
+					SELECT 1 FROM pg_constraint WHERE conname = 'access_list_pkey'
+				) THEN
+					ALTER TABLE access_list ADD CONSTRAINT access_list_pkey PRIMARY KEY (uid, source_id);
+				END IF;
+			END $$;
+		'''))
 		conn.commit()
