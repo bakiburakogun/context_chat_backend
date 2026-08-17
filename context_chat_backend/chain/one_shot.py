@@ -64,9 +64,13 @@ def process_context_query(
 		get_pruned_query(llm, app_config, query, template or _LLM_TEMPLATE, context_docs),
 		userid=user_id,
 	).strip()
-	unique_sources = [SearchResult(
-		source_id=source,
-		title=d.metadata.get('title', ''),
-	) for d in context_docs if (source := d.metadata.get('source'))]
+	sources_by_id: dict[str, SearchResult] = {}
+	for d in context_docs:
+		source = d.metadata.get('source')
+		if source and source not in sources_by_id:
+			sources_by_id[source] = SearchResult(
+				source_id=source,
+				title=d.metadata.get('title', ''),
+			)
 
-	return LLMOutput(output=output, sources=unique_sources)
+	return LLMOutput(output=output, sources=list(sources_by_id.values()))
