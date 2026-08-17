@@ -18,6 +18,7 @@ def get_previous_version(version_info_path: str) -> tuple[int, bool]:
 	'+' at the end of the patch version indicates that repairs have been run.
 	A return of (0, True) means no previous version is known, so all repairs
 	are considered pending and will run.
+	The repairs are idempotent so re-running them does not cause any issue.
 	'''
 	if not os.path.exists(version_info_path):
 		return (0, True)
@@ -30,7 +31,7 @@ def get_previous_version(version_info_path: str) -> tuple[int, bool]:
 			f'Warning: could not read {version_info_path}, assuming no previous version was installed: {e}',
 			flush=True,
 		)
-		return (0, True)
+		return (0, False)
 
 	if not version_string:
 		return (0, True)
