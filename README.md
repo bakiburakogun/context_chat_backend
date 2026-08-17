@@ -122,16 +122,15 @@ The configuration for the remote model can be done in the `embedding` section of
 ## Repair
 v2.1.0 introduces repair steps. These run on app startup.
 
-Repair files live in `context_chat_backend/repair/` and are named `repair<version>_date<timestamp>.py`.
+Repair files live in `context_chat_backend/repair/` and are named `repair<XYYYZZZ>_date<timestamp>.py`, where `X` is the major version, `YYY` is the zero-padded minor version, and `ZZZ` is the zero-padded patch version (e.g. `repair5004000_date20260716145303.py` for version `5.4.0`).
 To skip a repair step, add the repair filename(s) to `repair.info` in the persistent storage, one filename per line.  
 Use the below command inside the container or add the repair filename manually in the repair.info file inside the docker container at `/nc_app_context_chat_backend_data`
 
 `echo <repair_filename>.py >> "$APP_PERSISTENT_STORAGE/repair.info"`
 
 #### How to generate a repair step file
-`APP_VERSION` should at least be incremented at the minor level (MAJOR.MINOR.PATCH)
 
-`APP_VERSION="2.1.0" ./genrepair.sh`
+`APP_VERSION="5.4.1" ./genrepair.sh`
 
 ## End-to-End Example for Building and Registering the Backend Manually (with CUDA)
 
