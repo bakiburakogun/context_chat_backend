@@ -13,12 +13,25 @@ REPAIR_SKIP_FILE = 'repair.info'
 PARTIAL_REPAIR_FILE = 'partial_repair.tmp'
 
 
+def _parse_version(version_string: str) -> int:
+	'''Convert a version string like "X.Y.Z" or "X.Y.Z+" to an integer XYYYZZZ.'''
+	clean = version_string.rstrip('+')
+	splits = clean.split('.')
+	major = int(splits[0]) if splits else 0
+	minor = int(splits[1]) if len(splits) > 1 else 0
+	patch = int(splits[2]) if len(splits) > 2 else 0
+	return major * 1_000_000 + minor * 1_000 + patch
+
+
 def get_previous_version(version_info_path: str) -> tuple[int, bool]:
 	'''
-	'+' at the end of the patch version indicates that repairs have been run.
+	'+' at the end of the version indicates that repairs have been run.
+	A return of (0, True) means no previous version is known, so all repairs
+	are considered pending and will run.
+	The repairs are idempotent so re-running them does not cause any issue.
 	'''
 	if not os.path.exists(version_info_path):
-		return (0, False)
+		return (0, True)
 
 	try:
 		with open(version_info_path) as f:
@@ -31,18 +44,14 @@ def get_previous_version(version_info_path: str) -> tuple[int, bool]:
 		return (0, False)
 
 	if not version_string:
-		return (0, False)
-
-	splits = version_string.split('.')
-	major = splits[0]
-	minor = splits[1] if len(splits) > 1 else '0'
+		return (0, True)
 
 	repairs_pending = not (
 		version_string.endswith('+')
-		and version_string.rstrip('+') == os.environ['APP_VERSION']
+		and _parse_version(version_string) == _parse_version(os.environ['APP_VERSION'])
 	)
 
-	return (int(major + minor.zfill(3)), repairs_pending)
+	return (_parse_version(version_string), repairs_pending)
 
 
 def get_skipped_repairs(persistent_storage_path: str) -> set[str]:

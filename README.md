@@ -114,7 +114,7 @@ For llm->llama as an example, they can be found here: https://api.python.langcha
 
 Make sure to restart the app after changing the config file. For docker, this would mean restarting the container (`docker restart nc_app_context_chat_backend` or the container name/id).
 
-This is a file copied from one of the two configurations (config.cpu.yaml or config.gpu.conf) during app startup if `config.yaml` is not already present to the persistent storage. See [Repair section](#repair) on details on the repair step that removes the config if you have a custom config.
+This is a file copied from one of the two configurations (config.cpu.yaml or config.gpu.conf) during app startup if `config.yaml` is not already present to the persistent storage. See the [Repair section](#repair) for details on how repair steps run on startup and how to skip them.
 
 The default way is to spawn an embedding server backed by llama.cpp, where the local model runs on either CPU or GPU. The other option is to use a remote model from a OpenAI-compatible API.
 The configuration for the remote model can be done in the `embedding` section of the config file or environment variables can be set during the deployment of the app. The environment variables override the config. See the [Scaling section](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html#scaling) in the admin docs for more details.
@@ -122,17 +122,15 @@ The configuration for the remote model can be done in the `embedding` section of
 ## Repair
 v2.1.0 introduces repair steps. These run on app startup.
 
-`repair2001_date20240412153300.py` removes the existing config.yaml in the persistent storage for the
-hardware detection to run and place a suitable config (based on accelerator detected) in its place.  
-To skip this step (or steps in the future), add the repair filename(s) to `repair.info` in the persistent storage, one filename per line.  
+Repair files live in `context_chat_backend/repair/` and are named `repair<XYYYZZZ>_date<timestamp>.py`, where `X` is the major version, `YYY` is the zero-padded minor version, and `ZZZ` is the zero-padded patch version (e.g. `repair5004000_date20260716145303.py` for version `5.4.0`).
+To skip a repair step, add the repair filename(s) to `repair.info` in the persistent storage, one filename per line.  
 Use the below command inside the container or add the repair filename manually in the repair.info file inside the docker container at `/nc_app_context_chat_backend_data`
 
-`echo repair2001_date20240412153300.py >> "$APP_PERSISTENT_STORAGE/repair.info"`
+`echo <repair_filename>.py >> "$APP_PERSISTENT_STORAGE/repair.info"`
 
 #### How to generate a repair step file
-`APP_VERSION` should at least be incremented at the minor level (MAJOR.MINOR.PATCH)
 
-`APP_VERSION="2.1.0" ./genrepair.sh`
+`APP_VERSION="5.4.1" ./genrepair.sh`
 
 ## End-to-End Example for Building and Registering the Backend Manually (with CUDA)
 

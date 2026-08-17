@@ -22,6 +22,11 @@ def run(_previous_version: int):
 
 	engine = sa.create_engine(db_url)
 	with engine.connect() as conn:
+		table_exists = conn.execute(sa.text("SELECT to_regclass('access_list')")).scalar()
+		if table_exists is None:
+			print('access_list table does not exist, skipping repair', flush=True)
+			return
+
 		conn.execute(sa.text(
 			'CREATE INDEX IF NOT EXISTS idx_access_list_source_id ON access_list (source_id)'
 		))
