@@ -720,7 +720,7 @@ def process_search_task(
 			user_id,
 			task_input.get('prompt'),
 			vectordb_loader,
-			CONTEXT_LIMIT,
+			task_input.get('limit', CONTEXT_LIMIT),
 			task_input.get('scopeType'),
 			task_input.get('scopeList'),
 		)
