@@ -16,9 +16,14 @@ classifiers = [
 	"Private :: Do Not Upload",
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra --strict-markers --strict-config"
+
 [tool.ruff]
 target-version = "py311"
-include = ["context_chat_backend/**/*.py", "main.py"]
+include = ["context_chat_backend/**/*.py", "main.py", "tests/**/*.py"]
 line-length = 120
 fix = true
 
@@ -39,8 +44,13 @@ fixable = [
 	"RUF100", # Unused noqa comments
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+	"S101",   # asserts are the point of a test suite
+]
+
 [tool.pyright]
-include = ["context_chat_backend/**/*.py", "main.py", "main_em.py"]
+include = ["context_chat_backend/**/*.py", "main.py", "main_em.py", "tests/**/*.py"]
 pythonVersion = "3.11"
 pythonPlatform = "Linux"
 

@@ -1,0 +1,84 @@
+# SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Unit test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - stable*
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unit-test-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+
+    outputs:
+      src: ${{ steps.changes.outputs.src}}
+
+    steps:
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: changes
+        continue-on-error: true
+        with:
+          filters: |
+            src:
+              - 'context_chat_backend/**'
+              - 'tests/**'
+              - 'genrepair.sh'
+              - 'pyproject.toml'
+              - 'requirements_dev.txt'
+              - '.github/workflows/unit-test.yml'
+
+  unit:
+    runs-on: ubuntu-latest
+
+    needs: changes
+    if: needs.changes.outputs.src != 'false'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Setup python 3.11
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5
+        with:
+          python-version: '3.11'
+
+      # The repair runner only depends on the standard library, so the heavy
+      # runtime requirements are deliberately not installed here.
+      - name: Install pytest
+        run: |
+          pip install --upgrade pip
+          pip install pytest
+
+      - name: Run unit tests
+        run: pytest
+
+  summary:
+    permissions:
+      contents: none
+    runs-on: ubuntu-latest-low
+    needs: [changes, unit]
+
+    if: always()
+
+    # This is the summary, we just avoid to rename it so that branch protection rules still match
+    name: unit-test
+
+    steps:
+      - name: Summary status
+        run: if ${{ needs.changes.outputs.src != 'false' && needs.unit.result != 'success' }}; then exit 1; fi
