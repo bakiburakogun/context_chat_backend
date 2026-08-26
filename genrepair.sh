@@ -3,7 +3,9 @@
 # SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-parts=(${APP_VERSION//./ })
+# pre-release suffixes (-alpha*, -beta*, -rc*) are stripped, like in the repair runner
+version=${APP_VERSION%%-*}
+parts=(${version//./ })
 repair_filename="repair${parts[0]}$(printf %03d ${parts[1]})$(printf %03d ${parts[2]})_date$(date +%Y%m%d%H%M%S).py"
 
 echo "Generating repair script: $repair_filename"

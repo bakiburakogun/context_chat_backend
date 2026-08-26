@@ -11,11 +11,17 @@ REPAIR_DIR = 'context_chat_backend/repair'
 VERSION_INFO_FILE = 'version.info'
 REPAIR_SKIP_FILE = 'repair.info'
 PARTIAL_REPAIR_FILE = 'partial_repair.tmp'
+PRERELEASE_SUFFIX_RE = re.compile(r'-(?:alpha|beta|rc).*$', re.IGNORECASE)
 
 
 def _parse_version(version_string: str) -> int:
-	'''Convert a version string like "X.Y.Z" or "X.Y.Z+" to an integer XYYYZZZ.'''
-	clean = version_string.rstrip('+')
+	'''Convert a version string like "X.Y.Z", "X.Y.Z+" or "X.Y.Z-beta0" to an integer XYYYZZZ.
+
+	The trailing '+' (repairs-done marker) and pre-release suffixes
+	('-alpha*', '-beta*', '-rc*') are ignored, so "X.Y.Z-beta0" and "X.Y.Z"
+	are considered the same version.
+	'''
+	clean = PRERELEASE_SUFFIX_RE.sub('', version_string.rstrip('+'))
 	splits = clean.split('.')
 	major = int(splits[0]) if splits else 0
 	minor = int(splits[1]) if len(splits) > 1 else 0
