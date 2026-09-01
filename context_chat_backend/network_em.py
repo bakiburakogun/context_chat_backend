@@ -23,9 +23,6 @@ from .types import (
 
 logger = logging.getLogger('ccb.nextwork_em')
 TCP_CONNECT_TIMEOUT = 2.0  # seconds
-# Connection timeout for the embedding requests, kept apart from the read timeout:
-# a stalled TLS handshake would otherwise hold a worker for the whole
-# request_timeout, and the batch waits for every worker in it.
 HTTP_CONNECT_TIMEOUT = 15  # seconds
 
 # Copied from llama_cpp/llama_types.py
@@ -103,7 +100,10 @@ class NetworkEmbeddings(Embeddings):
 			response = niquests.post(
 				f'{emconf.base_url.removesuffix("/")}/embeddings',
 				json=data,
-				timeout=(HTTP_CONNECT_TIMEOUT, emconf.request_timeout),
+				timeout=niquests.TimeoutConfiguration(
+					connect=HTTP_CONNECT_TIMEOUT,
+					read=emconf.request_timeout,
+				),
 				auth=auth,
 				verify=self.app_config.verify_ssl,
 			)
